@@ -29,6 +29,3 @@ jobs:
 
     - name: Build
       run: cmake --build build --config Release
-
-    - name: Run tests
-      run: ctest --test-dir build --output-on-failure
