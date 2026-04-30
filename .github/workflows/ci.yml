@@ -1,6 +1,5 @@
 name: C++ CI
 
-# Запуск при push или pull_request
 on:
   push:
     branches: [ master ]
@@ -10,38 +9,26 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        compiler: [gcc, msvc]
 
     steps:
-      # 1️⃣ Клонируем репозиторий
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # 2️⃣ Настройка среды
-      - name: Setup environment
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt update
-          sudo apt install -y build-essential cmake
+    - name: Install dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential cmake
 
-      - name: Setup environment
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+    - name: Configure CMake
+      run: cmake -S . -B build
 
-      # 3️⃣ Создание каталога сборки
-      - name: Configure CMake
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. 
+    - name: Build
+      run: cmake --build build --config Release
 
-      # 4️⃣ Сборка проекта
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release -- -j$(nproc || 2)
-
+    - name: Run tests
+      run: ctest --test-dir build --output-on-failure
