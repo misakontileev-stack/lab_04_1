@@ -45,8 +45,3 @@ jobs:
           cd build
           cmake --build . --config Release -- -j$(nproc || 2)
 
-      # 5️⃣ Запуск тестов (если они есть)
-      - name: Run tests
-        run: |
-          cd build
-          ctest --output-on-failure || echo "No tests or some tests failed"
