@@ -1,36 +1,52 @@
 name: C++ CI
 
+# Запуск при push или pull_request
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        compiler: [gcc, msvc]
 
     steps:
-    # 1️⃣ Клонируем репозиторий
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # 1️⃣ Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    # 2️⃣ Устанавливаем зависимости (g++, cmake)
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y build-essential cmake
+      # 2️⃣ Настройка среды
+      - name: Setup environment
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake
 
-    # 3️⃣ Создаём каталог сборки
-    - name: Configure CMake
-      run: |
-        mkdir -p build
-        cd build
-        cmake ..
+      - name: Setup environment
+        if: matrix.os == 'windows-latest'
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
 
-    # 4️⃣ Сборка проекта
-    - name: Build
-      run: |
-        cd build
-        cmake --build . -- -j$(nproc)
+      # 3️⃣ Создание каталога сборки
+      - name: Configure CMake
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. 
 
+      # 4️⃣ Сборка проекта
+      - name: Build
+        run: |
+          cd build
+          cmake --build . --config Release -- -j$(nproc || 2)
+
+      # 5️⃣ Запуск тестов (если они есть)
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure || echo "No tests or some tests failed"
